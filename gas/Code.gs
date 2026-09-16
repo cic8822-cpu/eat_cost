@@ -18,6 +18,7 @@ function include(filename) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('급식비 관리')
+    .addItem('초기 설정(1회)', 'runInitialSetup')
     .addItem('구조 점검', 'menuValidateStructure_')
     .addItem('직원ID 부여', 'menuAssignEmployeeIds_')
     .addItem('직원 동기화', 'menuSyncEmployees_')
