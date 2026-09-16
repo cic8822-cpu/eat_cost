@@ -87,12 +87,18 @@
     google.script.run
       .withSuccessHandler(function (res) {
         if (!res.ok) { setStatus(res.message, 'error'); return; }
+        var statusByKey = {};
+        state.days.forEach(function (d) { statusByKey[d.key] = d.status; });
         state.selected = {};
-        (res.data.dateKeys || []).forEach(function (k) { state.selected[k] = true; });
+        var droppedCount = 0;
+        (res.data.dateKeys || []).forEach(function (k) {
+          if (statusByKey[k] === '불가') { droppedCount++; return; }
+          state.selected[k] = true;
+        });
         el.noteInput.value = res.data.note || '';
         renderDayGrid();
         updateSummary();
-        setStatus('', '');
+        setStatus(droppedCount > 0 ? ('이전 저장 자료 중 급식 불가일 ' + droppedCount + '건은 자동으로 제외되었습니다.') : '', droppedCount > 0 ? 'error' : '');
       })
       .withFailureHandler(function (err) { setStatus('불러오기 실패: ' + err.message, 'error'); })
       .getMySubmission(empId);
@@ -111,6 +117,7 @@
   });
 
   el.checkAllBtn.addEventListener('click', function () {
+    state.selected = {};
     state.days.forEach(function (d) { if (d.status !== '불가') state.selected[d.key] = true; });
     renderDayGrid();
     updateSummary();
