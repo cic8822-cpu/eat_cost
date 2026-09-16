@@ -4,11 +4,14 @@
 
 function getPeriod_() {
   var meal = getSheet_(SHEET_NAMES.MEAL);
-  return {
-    year: Number(meal.getRange(MEAL_YEAR_CELL).getValue()),
-    month: Number(meal.getRange(MEAL_MONTH_CELL).getValue()),
-    unitPrice: Number(meal.getRange(MEAL_UNIT_PRICE_CELL).getValue())
-  };
+  var year = Number(meal.getRange(MEAL_YEAR_CELL).getValue());
+  var month = Number(meal.getRange(MEAL_MONTH_CELL).getValue());
+  var unitPrice = Number(meal.getRange(MEAL_UNIT_PRICE_CELL).getValue());
+  // 학교급식 B1/D1이 비어있는 채(마법사·월 생성 실행 전) 배포되는 경우를 대비한 기본값
+  var today = new Date();
+  if (!year) year = today.getFullYear();
+  if (!month || month < 1 || month > 12) month = today.getMonth() + 1;
+  return { year: year, month: month, unitPrice: unitPrice || 0 };
 }
 
 function getSettingsMap_() {
@@ -71,6 +74,7 @@ function getSubmissionSummary_() {
 
 function getInitialData() {
   try {
+    ensureCoreStructureSilently_();
     var period = getPeriod_();
     var employees = getEmployeesForClient_();
     var days = buildDayList_(period.year, period.month);

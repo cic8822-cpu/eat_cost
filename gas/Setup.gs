@@ -124,6 +124,26 @@ function ensureLogSheet_(log) {
   log.push('제출로그 시트: ' + (created ? '신규 생성' : '기존 유지'));
 }
 
+// 웹앱이 로드될 때(getInitialData) 매번 가볍게 호출되는 자가복구 로직.
+// 관리자가 마법사/초기설정 메뉴를 따로 실행하지 않고 데이터 시트만 채운 뒤
+// 바로 배포해도 직원 목록이 정상적으로 뜨도록, 구조 확인·직원ID 부여·동기화를
+// 자동으로 처리한다. 구조 확인(시트/헤더 생성)은 한 번만 하면 되므로
+// STRUCTURE_READY 플래그로 캐시하고, 직원ID 부여·동기화는 매번 가볍게 재확인한다.
+function ensureCoreStructureSilently_() {
+  if (!getScriptProp_('STRUCTURE_READY')) {
+    var log = [];
+    ensureDataSheetHeaders_(log);
+    ensureSettingsSheet_(log);
+    ensureLogSheet_(log);
+    ensureMealHeaders_(log);
+    setScriptProp_('STRUCTURE_READY', 'true');
+  }
+  assignEmployeeIds();
+  if (mealSheetNeedsSync_()) {
+    syncEmployeesToMealSheet_();
+  }
+}
+
 function setSettingValue_(key, value) {
   var sheet = getSheet_(SHEET_NAMES.SETTINGS);
   var lastRow = sheet.getLastRow();

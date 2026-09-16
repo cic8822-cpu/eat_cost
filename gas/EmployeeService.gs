@@ -136,3 +136,23 @@ function syncEmployeesToMealSheet_() {
   SpreadsheetApp.flush();
   return ok_({ synced: rows.length });
 }
+
+// 학교급식 시트가 현재 데이터 시트(직원ID 기준)와 어긋나 있는지 가볍게(읽기 전용) 확인.
+// 새 직원 추가, 직원ID 신규 부여 등으로 동기화가 필요한 경우 true를 반환한다.
+function mealSheetNeedsSync_() {
+  var rows = readDataSheetRows_().filter(function (r) { return r.active !== 'N' && r.empId; });
+  var meal = getSheet_(SHEET_NAMES.MEAL);
+  var lastRow = meal.getLastRow();
+  var mealIds = {};
+  if (lastRow >= MEAL_DATA_START_ROW) {
+    meal.getRange(MEAL_DATA_START_ROW, MEAL_COL.EMP_ID, lastRow - MEAL_DATA_START_ROW + 1, 1).getValues().forEach(function (r) {
+      var id = trimStr_(r[0]);
+      if (id) mealIds[id] = true;
+    });
+  }
+  if (rows.length !== Object.keys(mealIds).length) return true;
+  for (var i = 0; i < rows.length; i++) {
+    if (!mealIds[rows[i].empId]) return true;
+  }
+  return false;
+}
