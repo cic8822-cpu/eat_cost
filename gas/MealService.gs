@@ -121,7 +121,7 @@ function saveSubmission(payload) {
   var locked = false;
   try {
     locked = lock.tryLock(30000);
-    if (!locked) return fail_('LOCK_TIMEOUT', '다른 사용자가 저장 중입니다. 잠시 후 다시 시도해 주세요.');
+    if (!locked) return fail_('LOCK_TIMEOUT', '다른 사용자가 제출 중입니다. 잠시 후 다시 시도해 주세요.');
 
     var empId = trimStr_(payload && payload.employeeId);
     var reqYear = Number(payload && payload.year);

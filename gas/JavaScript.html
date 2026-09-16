@@ -98,7 +98,7 @@
         el.noteInput.value = res.data.note || '';
         renderDayGrid();
         updateSummary();
-        setStatus(droppedCount > 0 ? ('이전 저장 자료 중 급식 불가일 ' + droppedCount + '건은 자동으로 제외되었습니다.') : '', droppedCount > 0 ? 'error' : '');
+        setStatus(droppedCount > 0 ? ('이전 제출 자료 중 급식 불가일 ' + droppedCount + '건은 자동으로 제외되었습니다.') : '', droppedCount > 0 ? 'error' : '');
       })
       .withFailureHandler(function (err) { setStatus('불러오기 실패: ' + err.message, 'error'); })
       .getMySubmission(empId);
@@ -132,7 +132,7 @@
   el.saveBtn.addEventListener('click', function () {
     if (!state.employeeId) { setStatus('직원을 먼저 선택해 주세요.', 'error'); return; }
     el.saveBtn.disabled = true;
-    setStatus('저장 중...', '');
+    setStatus('제출 중...', '');
     var dateKeys = Object.keys(state.selected).filter(function (k) { return state.selected[k]; });
     var payload = {
       employeeId: state.employeeId,
@@ -143,7 +143,7 @@
     };
     var timeout = setTimeout(function () {
       el.saveBtn.disabled = false;
-      setStatus('저장 응답이 지연되고 있습니다. 다시 시도해 주세요.', 'error');
+      setStatus('제출 응답이 지연되고 있습니다. 다시 시도해 주세요.', 'error');
     }, 30000);
 
     google.script.run
@@ -161,13 +161,14 @@
         var emailMsg = '';
         if (res.data.emailStatus === 'SENT') emailMsg = ' 안내 메일이 발송되었습니다.';
         else if (res.data.emailStatus === 'NO_EMAIL') emailMsg = ' (이메일 미등록으로 메일은 발송되지 않았습니다)';
-        setStatus('저장되었습니다. ' + res.data.days + '일 / ' + res.data.amount.toLocaleString('ko-KR') + '원' + emailMsg, 'ok');
+        setStatus('제출되었습니다. ' + res.data.days + '일 / ' + res.data.amount.toLocaleString('ko-KR') + '원' + emailMsg, 'ok');
         loadSummary();
+        loadAdminIfToken();
       })
       .withFailureHandler(function (err) {
         clearTimeout(timeout);
         el.saveBtn.disabled = false;
-        setStatus('저장 실패: ' + err.message, 'error');
+        setStatus('제출 실패: ' + err.message, 'error');
       })
       .saveSubmission(payload);
   });
@@ -232,5 +233,19 @@
   }
 
   init();
+
+  // 실시간 제출 현황: 다른 사람이 제출해도 화면에 자동 반영되도록 주기적으로 갱신
+  var REFRESH_INTERVAL_MS = 20000;
+  setInterval(function () {
+    loadSummary();
+    loadAdminIfToken();
+  }, REFRESH_INTERVAL_MS);
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) {
+      loadSummary();
+      loadAdminIfToken();
+    }
+  });
 })();
 </script>
