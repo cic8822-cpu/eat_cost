@@ -304,3 +304,23 @@ function freezeSheetValues_(sheet) {
   var range = sheet.getDataRange();
   range.setValues(range.getValues());
 }
+
+// 학교급식 시트의 제출 데이터(급식일 체크·제출일시·비고·메일상태)만 초기화.
+// 직원 목록(A~D)과 직원ID(AP)는 보존한다. 년/월을 바꿔도 지워지지 않던 잔존 데이터를
+// 담당자가 수동으로 깨끗이 비우기 위한 용도(archive 없이 즉시 삭제, 되돌릴 수 없음).
+function resetSubmissions() {
+  var meal = getSheet_(SHEET_NAMES.MEAL);
+  var lastRow = meal.getLastRow();
+  var clearedRows = 0;
+  if (lastRow >= MEAL_DATA_START_ROW) {
+    clearedRows = lastRow - MEAL_DATA_START_ROW + 1;
+    meal.getRange(
+      MEAL_DATA_START_ROW, MEAL_COL.DAY_START,
+      clearedRows, MEAL_COL.MAIL_STATUS - MEAL_COL.DAY_START + 1 // H ~ AO (AP 직원ID는 보존)
+    ).clearContent();
+  }
+  SpreadsheetApp.flush();
+
+  var billRes = rebuildPersonalStatement();
+  return ok_({ clearedRows: clearedRows, personal: billRes.data });
+}

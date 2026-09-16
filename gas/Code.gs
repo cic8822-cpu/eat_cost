@@ -25,6 +25,7 @@ function onOpen() {
     .addSeparator()
     .addItem('월 생성', 'menuGenerateMonth_')
     .addItem('월 마감(다음 달로 전환)', 'menuCloseMonth_')
+    .addItem('제출자료 초기화', 'menuResetSubmissions_')
     .addSeparator()
     .addItem('개인별내역 재생성', 'menuRebuildPersonal_')
     .addItem('테스트 메일(본인)', 'menuSendTestMail_')
@@ -63,6 +64,19 @@ function menuCloseMonth_() {
   if (confirm !== ui.Button.YES) return;
   var res = closeMonth();
   ui.alert('월 마감 완료. 다음 월: ' + res.data.next.year + '년 ' + res.data.next.month + '월');
+}
+
+function menuResetSubmissions_() {
+  var ui = SpreadsheetApp.getUi();
+  var confirm = ui.alert(
+    '제출자료 초기화',
+    '학교급식 시트의 모든 직원 제출 데이터(급식일 체크·제출일시·비고·메일상태)를 삭제합니다.\n' +
+    '직원 목록과 직원ID는 그대로 남습니다. 되돌릴 수 없습니다. 계속할까요?',
+    ui.ButtonSet.YES_NO
+  );
+  if (confirm !== ui.Button.YES) return;
+  var res = resetSubmissions();
+  ui.alert('초기화 완료: ' + res.data.clearedRows + '명 데이터가 초기화되었습니다.');
 }
 
 function menuRebuildPersonal_() {
