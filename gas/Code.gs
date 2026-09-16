@@ -18,7 +18,8 @@ function include(filename) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('급식비 관리')
-    .addItem('초기 설정(1회)', 'runInitialSetup')
+    .addItem('🎉 처음 시작하기(설정 마법사)', 'showSetupWizard_')
+    .addItem('초기 설정(값 입력 없이 빠르게)', 'runInitialSetup')
     .addItem('구조 점검', 'menuValidateStructure_')
     .addItem('직원ID 부여', 'menuAssignEmployeeIds_')
     .addItem('직원 동기화', 'menuSyncEmployees_')
@@ -31,6 +32,11 @@ function onOpen() {
     .addItem('테스트 메일(본인)', 'menuSendTestMail_')
     .addItem('관리자 토큰 재발급', 'menuRegenerateAdminToken_')
     .addToUi();
+}
+
+function showSetupWizard_() {
+  var html = HtmlService.createHtmlOutputFromFile('SetupWizard').setWidth(480).setHeight(640);
+  SpreadsheetApp.getUi().showModalDialog(html, '급식비 관리 시스템 초기 설정');
 }
 
 function menuValidateStructure_() {

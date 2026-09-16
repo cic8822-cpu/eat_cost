@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; margin: 0; padding: 20px; color: #222; font-size: 13px; }
+    h1 { font-size: 1.1rem; margin: 0 0 4px; }
+    p.desc { color: #666; margin: 0 0 16px; line-height: 1.5; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-weight: 600; margin-bottom: 4px; }
+    .field .hint { color: #888; font-weight: 400; font-size: 0.8rem; }
+    input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+    .row2 { display: flex; gap: 8px; }
+    .row2 .field { flex: 1; }
+    .btn { min-height: 40px; padding: 0 16px; border-radius: 8px; border: none; background: #1976d2; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+    .btn:disabled { background: #90a4ae; cursor: not-allowed; }
+    #statusMsg { min-height: 20px; font-size: 0.85rem; margin-top: 10px; white-space: pre-wrap; }
+    #statusMsg.error { color: #c62828; }
+    #resultPanel { display: none; }
+    #resultPanel .ok-box { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    #resultPanel .warn-box { background: #fff8e1; border: 1px solid #ffe0a3; border-radius: 8px; padding: 12px; margin-bottom: 12px; white-space: pre-wrap; font-size: 0.85rem; }
+    #resultPanel ol { padding-left: 18px; line-height: 1.7; }
+    #resultPanel code { background: #f1f1f1; padding: 2px 4px; border-radius: 4px; word-break: break-all; }
+    #formPanel.hidden, #resultPanel.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="formPanel">
+    <h1>🎉 급식비 관리 시스템 초기 설정</h1>
+    <p class="desc">아래 정보를 입력하면 시트 구조 생성, 급식 대상월 설정, 관리자 토큰 발급까지 한 번에 처리됩니다. 계좌번호는 시트에 노출되지 않고 별도로 안전하게 저장됩니다.</p>
+
+    <div class="field">
+      <label>학교명</label>
+      <input type="text" id="schoolName" placeholder="예: 대한초등학교">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>은행명</label>
+        <input type="text" id="bankName" placeholder="예: 농협">
+      </div>
+      <div class="field">
+        <label>계좌번호</label>
+        <input type="text" id="bankAccount" placeholder="예: 123-4567-8901-11">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>예금주</label>
+      <input type="text" id="accountHolder" placeholder="예: 대한초등학교 김급식">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>입금기한 <span class="hint">(안내 문구용)</span></label>
+        <input type="text" id="paymentDeadline" placeholder="예: 매월 25일">
+      </div>
+      <div class="field">
+        <label>담당자 이메일</label>
+        <input type="text" id="adminEmail" placeholder="예: admin@school.go.kr">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>대상 년도</label>
+        <input type="number" id="year">
+      </div>
+      <div class="field">
+        <label>대상 월</label>
+        <input type="number" id="month" min="1" max="12">
+      </div>
+      <div class="field">
+        <label>급식단가(원)</label>
+        <input type="number" id="unitPrice" placeholder="예: 6850">
+      </div>
+    </div>
+
+    <button type="button" id="startBtn" class="btn">설정 시작</button>
+    <p id="statusMsg"></p>
+  </div>
+
+  <div id="resultPanel">
+    <h1>✅ 초기 설정 완료</h1>
+    <div class="ok-box" id="logBox"></div>
+    <div class="warn-box" id="warnBox" style="display:none;"></div>
+    <p><strong>남은 단계</strong></p>
+    <ol>
+      <li><strong>데이터</strong> 시트에 이 학교 직원 명단(직급/성명/이메일)을 입력하세요.</li>
+      <li>메뉴 <strong>급식비 관리 → 직원 동기화</strong> 실행.</li>
+      <li>상단 <strong>배포 → 새 배포 → 웹 앱</strong>으로 URL을 발급하고 직원들에게 공유하세요.</li>
+      <li>관리자 상세 현황 링크: <code id="adminUrlHint">(배포 URL)?admin=<span id="adminTokenText"></span></code></li>
+    </ol>
+    <button type="button" id="closeBtn" class="btn">닫기</button>
+  </div>
+
+  <script>
+    (function () {
+      var today = new Date();
+      document.getElementById('year').value = today.getFullYear();
+      document.getElementById('month').value = today.getMonth() + 1;
+
+      var statusEl = document.getElementById('statusMsg');
+      var startBtn = document.getElementById('startBtn');
+
+      function setStatus(msg, isError) {
+        statusEl.textContent = msg || '';
+        statusEl.className = isError ? 'error' : '';
+      }
+
+      startBtn.addEventListener('click', function () {
+        var payload = {
+          schoolName: document.getElementById('schoolName').value,
+          bankName: document.getElementById('bankName').value,
+          bankAccount: document.getElementById('bankAccount').value,
+          accountHolder: document.getElementById('accountHolder').value,
+          paymentDeadline: document.getElementById('paymentDeadline').value,
+          adminEmail: document.getElementById('adminEmail').value,
+          unitPrice: document.getElementById('unitPrice').value,
+          year: document.getElementById('year').value,
+          month: document.getElementById('month').value
+        };
+
+        if (!payload.bankAccount || !payload.accountHolder || !payload.unitPrice) {
+          setStatus('계좌번호 · 예금주 · 급식단가는 필수 입력입니다.', true);
+          return;
+        }
+
+        startBtn.disabled = true;
+        setStatus('설정 진행 중... (몇 초 걸릴 수 있습니다)', false);
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            startBtn.disabled = false;
+            if (!res.ok) {
+              setStatus(res.message, true);
+              return;
+            }
+            document.getElementById('formPanel').classList.add('hidden');
+            document.getElementById('resultPanel').style.display = 'block';
+            document.getElementById('logBox').textContent = res.data.log.join('\n');
+            document.getElementById('adminTokenText').textContent = res.data.adminToken;
+            if (!res.data.structureOk) {
+              var warnBox = document.getElementById('warnBox');
+              warnBox.style.display = 'block';
+              warnBox.textContent = '구조 점검 경고:\n' + res.data.structureMessage;
+            }
+          })
+          .withFailureHandler(function (err) {
+            startBtn.disabled = false;
+            setStatus('설정 실패: ' + err.message, true);
+          })
+          .runGuidedSetup(payload);
+      });
+
+      document.getElementById('closeBtn').addEventListener('click', function () {
+        google.script.host.close();
+      });
+    })();
+  </script>
+</body>
+</html>

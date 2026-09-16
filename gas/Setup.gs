@@ -124,6 +124,81 @@ function ensureLogSheet_(log) {
   log.push('제출로그 시트: ' + (created ? '신규 생성' : '기존 유지'));
 }
 
+function setSettingValue_(key, value) {
+  var sheet = getSheet_(SHEET_NAMES.SETTINGS);
+  var lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    var keys = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      if (trimStr_(keys[i][0]) === key) {
+        sheet.getRange(2 + i, 2).setValue(value);
+        return;
+      }
+    }
+  }
+  sheet.appendRow([key, value]);
+}
+
+// 다른 학교가 시트를 복사한 뒤 1회 실행하는 안내형 설정 마법사(Setup.html)의 서버 로직.
+// runInitialSetup과 달리 학교명/계좌/급식단가/대상월을 사용자 입력값으로 즉시 반영한다.
+function runGuidedSetup(formData) {
+  try {
+    formData = formData || {};
+    var log = [];
+
+    ensureDataSheetHeaders_(log);
+    ensureSettingsSheet_(log);
+    ensureLogSheet_(log);
+    ensureMealHeaders_(log);
+
+    setSettingValue_('SCHOOL_NAME', trimStr_(formData.schoolName));
+    setSettingValue_('BANK_NAME', trimStr_(formData.bankName));
+    setSettingValue_('PAYMENT_DEADLINE', trimStr_(formData.paymentDeadline));
+    setSettingValue_('ADMIN_EMAIL', trimStr_(formData.adminEmail));
+
+    setScriptProp_(BANK_ACCOUNT_KEY, trimStr_(formData.bankAccount));
+    setScriptProp_(ACCOUNT_HOLDER_KEY, trimStr_(formData.accountHolder));
+
+    var unitPrice = Number(formData.unitPrice);
+    if (!unitPrice || unitPrice <= 0) return fail_('INVALID_INPUT', '급식단가를 올바르게 입력해 주세요.');
+    var year = Number(formData.year);
+    var month = Number(formData.month);
+    if (!year || !month || month < 1 || month > 12) return fail_('INVALID_INPUT', '년도/월을 올바르게 입력해 주세요.');
+
+    var meal = getSheet_(SHEET_NAMES.MEAL);
+    meal.getRange(MEAL_UNIT_PRICE_CELL).setValue(unitPrice);
+
+    var genRes = generateMonth(year, month);
+    log.push('월 생성: ' + genRes.data.year + '년 ' + genRes.data.month + '월 (급식단가 ' + unitPrice + '원)');
+
+    var idRes = assignEmployeeIds();
+    log.push('직원ID 부여: ' + idRes.data.assigned + '건');
+
+    var billRes = rebuildPersonalStatement();
+    log.push('개인별내역 재생성: ' + billRes.data.rows + '명');
+
+    var token = getScriptProp_(ADMIN_TOKEN_KEY);
+    if (!token) {
+      token = Utilities.getUuid().replace(/-/g, '');
+      setScriptProp_(ADMIN_TOKEN_KEY, token);
+      log.push('관리자 토큰 신규 발급');
+    }
+
+    setScriptProp_('SETUP_DONE', nowStamp_());
+
+    var check = validateSheetStructure();
+
+    return ok_({
+      log: log,
+      adminToken: token,
+      structureOk: check.ok,
+      structureMessage: check.ok ? '' : check.message
+    });
+  } catch (err) {
+    return fail_('SETUP_ERROR', err.message);
+  }
+}
+
 function ensureMealHeaders_(log) {
   var sheet = getSheet_(SHEET_NAMES.MEAL);
   var current = sheet.getRange(MEAL_HEADER_ROW, MEAL_COL.SUBMITTED_AT, 1, 4).getValues()[0];
