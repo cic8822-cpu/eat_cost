@@ -88,10 +88,23 @@
     <p><strong>남은 단계</strong></p>
     <ol>
       <li><strong>데이터</strong> 시트에 이 학교 직원 명단(직급/성명/이메일)을 입력하세요.</li>
-      <li>메뉴 <strong>급식비 관리 → 직원 동기화</strong> 실행.</li>
-      <li>상단 <strong>배포 → 새 배포 → 웹 앱</strong>으로 URL을 발급하고 직원들에게 공유하세요.</li>
-      <li>관리자 상세 현황 링크: <code id="adminUrlHint">(배포 URL)?admin=<span id="adminTokenText"></span></code></li>
+      <li>아래 <strong>[지금 배포하기]</strong> 버튼을 눌러 직원용 웹 주소를 바로 발급받으세요.</li>
     </ol>
+
+    <button type="button" id="deployBtn" class="btn">🚀 지금 배포하기</button>
+    <p id="deployStatus" style="min-height:20px; font-size:0.85rem; margin-top:6px;"></p>
+
+    <div id="deployResult" style="display:none;">
+      <div class="ok-box">
+        <p style="margin:0 0 6px;"><strong>직원용 링크</strong> (이 주소를 교직원들에게 공유하세요)</p>
+        <code id="webAppUrlText" style="display:block; word-break:break-all;"></code>
+      </div>
+      <div class="ok-box">
+        <p style="margin:0 0 6px;"><strong>관리자 상세보기 링크</strong> (담당자만 보관)</p>
+        <code id="adminUrlText" style="display:block; word-break:break-all;"></code>
+      </div>
+    </div>
+
     <button type="button" id="closeBtn" class="btn">닫기</button>
   </div>
 
@@ -140,7 +153,6 @@
             document.getElementById('formPanel').classList.add('hidden');
             document.getElementById('resultPanel').style.display = 'block';
             document.getElementById('logBox').textContent = res.data.log.join('\n');
-            document.getElementById('adminTokenText').textContent = res.data.adminToken;
             if (!res.data.structureOk) {
               var warnBox = document.getElementById('warnBox');
               warnBox.style.display = 'block';
@@ -152,6 +164,36 @@
             setStatus('설정 실패: ' + err.message, true);
           })
           .runGuidedSetup(payload);
+      });
+
+      var deployBtn = document.getElementById('deployBtn');
+      var deployStatus = document.getElementById('deployStatus');
+
+      deployBtn.addEventListener('click', function () {
+        deployBtn.disabled = true;
+        deployStatus.textContent = '배포 진행 중... (몇 초 걸릴 수 있습니다)';
+        deployStatus.className = '';
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            deployBtn.disabled = false;
+            if (!res.ok) {
+              deployStatus.textContent = res.message;
+              deployStatus.className = 'error';
+              return;
+            }
+            deployStatus.textContent = '';
+            deployBtn.textContent = '🚀 다시 배포하기(갱신)';
+            document.getElementById('deployResult').style.display = 'block';
+            document.getElementById('webAppUrlText').textContent = res.data.url;
+            document.getElementById('adminUrlText').textContent = res.data.adminUrl || '(관리자 토큰 없음)';
+          })
+          .withFailureHandler(function (err) {
+            deployBtn.disabled = false;
+            deployStatus.textContent = '배포 실패: ' + err.message;
+            deployStatus.className = 'error';
+          })
+          .deployNow();
       });
 
       document.getElementById('closeBtn').addEventListener('click', function () {

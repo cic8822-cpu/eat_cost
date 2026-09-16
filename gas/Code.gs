@@ -31,12 +31,27 @@ function onOpen() {
     .addItem('개인별내역 재생성', 'menuRebuildPersonal_')
     .addItem('테스트 메일(본인)', 'menuSendTestMail_')
     .addItem('관리자 토큰 재발급', 'menuRegenerateAdminToken_')
+    .addSeparator()
+    .addItem('🚀 웹앱 배포(자동)', 'menuAutoDeploy_')
     .addToUi();
 }
 
 function showSetupWizard_() {
   var html = HtmlService.createHtmlOutputFromFile('SetupWizard').setWidth(480).setHeight(640);
   SpreadsheetApp.getUi().showModalDialog(html, '급식비 관리 시스템 초기 설정');
+}
+
+function menuAutoDeploy_() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var res = autoDeployWebApp_('메뉴에서 수동 배포');
+    var adminToken = getScriptProp_(ADMIN_TOKEN_KEY);
+    var msg = '직원용 링크:\n' + res.url;
+    if (adminToken) msg += '\n\n관리자 상세보기 링크:\n' + res.url + '?admin=' + adminToken;
+    ui.alert('웹앱 배포 완료', msg, ui.ButtonSet.OK);
+  } catch (err) {
+    ui.alert('자동 배포 실패: ' + err.message + '\n\n"확장 프로그램 → Apps Script → 배포 → 새 배포"로 직접 시도해 주세요.');
+  }
 }
 
 function menuValidateStructure_() {
