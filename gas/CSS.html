@@ -1,0 +1,35 @@
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; background:#f4f6f8; margin:0; color:#222; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+  .header h1 { font-size: 1.25rem; margin: 8px 0 4px; }
+  .desc { color:#666; font-size:0.85rem; margin:0 0 16px; }
+  .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .card h2 { font-size:1rem; margin:0 0 12px; }
+  select, textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+  textarea { min-height:60px; resize:vertical; margin-top:8px; }
+  .hint { background:#fff8e1; border:1px solid #ffe0a3; padding:8px 10px; border-radius:8px; font-size:0.8rem; color:#8a6d1f; margin-bottom:12px; }
+  .day-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:8px; }
+  .day-btn { min-height:44px; border:1px solid #cfd8dc; border-radius:8px; background:#fff; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .day-btn.checked { background:#e3f2fd; border-color:#42a5f5; font-weight:600; }
+  .day-btn.blocked { background:#f0f0f0; color:#aaa; cursor:not-allowed; text-decoration:line-through; }
+  .day-btn.caution { border-color:#ffb300; }
+  .day-btn.caution::after { content:"*"; color:#ffb300; margin-left:2px; }
+  .btn-row { display:flex; gap:8px; margin:12px 0; }
+  .btn { min-height:44px; padding:0 16px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:0.9rem; }
+  .btn.ghost { background:#fff; }
+  .btn.primary { width:100%; background:#1976d2; color:#fff; border:none; font-size:1rem; font-weight:600; margin-top:12px; }
+  .btn.primary:disabled { background:#90a4ae; cursor:not-allowed; }
+  .summary-line { margin:12px 0; font-size:0.95rem; }
+  .note-label { display:block; font-size:0.85rem; color:#555; margin-top:8px; }
+  .status-msg { min-height:20px; font-size:0.85rem; margin-top:8px; }
+  .status-msg.ok { color:#2e7d32; }
+  .status-msg.error { color:#c62828; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  th, td { border-bottom:1px solid #eee; padding:6px 8px; text-align:center; white-space:nowrap; }
+  .footer { text-align:center; color:#999; font-size:0.75rem; padding:12px 0; }
+  @media (max-width:400px) {
+    .day-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+  }
+</style>

@@ -1,0 +1,229 @@
+<script>
+(function () {
+  var state = {
+    period: null,
+    employees: [],
+    days: [],
+    selected: {},
+    employeeId: ''
+  };
+
+  var el = {
+    pageTitle: document.getElementById('pageTitle'),
+    pageDesc: document.getElementById('pageDesc'),
+    employeeSelect: document.getElementById('employeeSelect'),
+    daysSection: document.getElementById('daysSection'),
+    daysTitle: document.getElementById('daysTitle'),
+    daysHint: document.getElementById('daysHint'),
+    dayGrid: document.getElementById('dayGrid'),
+    checkAllBtn: document.getElementById('checkAllBtn'),
+    uncheckAllBtn: document.getElementById('uncheckAllBtn'),
+    selectedDays: document.getElementById('selectedDays'),
+    unitPriceLabel: document.getElementById('unitPriceLabel'),
+    amountLabel: document.getElementById('amountLabel'),
+    noteInput: document.getElementById('noteInput'),
+    saveBtn: document.getElementById('saveBtn'),
+    statusMsg: document.getElementById('statusMsg'),
+    totalCount: document.getElementById('totalCount'),
+    submittedCount: document.getElementById('submittedCount'),
+    adminSection: document.getElementById('adminSection'),
+    adminTableBody: document.querySelector('#adminTable tbody'),
+    footerNote: document.getElementById('footerNote')
+  };
+
+  function formatWon(n) {
+    return Number(n || 0).toLocaleString('ko-KR') + '원';
+  }
+
+  function setStatus(msg, type) {
+    el.statusMsg.textContent = msg || '';
+    el.statusMsg.className = 'status-msg' + (type ? ' ' + type : '');
+  }
+
+  function renderEmployees() {
+    el.employeeSelect.innerHTML = '<option value="">직급 · 성명 선택</option>';
+    state.employees.forEach(function (emp) {
+      var opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.textContent = emp.displayName;
+      el.employeeSelect.appendChild(opt);
+    });
+  }
+
+  function renderDayGrid() {
+    el.dayGrid.innerHTML = '';
+    state.days.forEach(function (day) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'day-btn';
+      btn.textContent = day.label;
+      btn.dataset.key = day.key;
+      if (day.status === '불가') {
+        btn.classList.add('blocked');
+        btn.disabled = true;
+      }
+      if (day.status === '주의') btn.classList.add('caution');
+      if (state.selected[day.key]) btn.classList.add('checked');
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        state.selected[day.key] = !state.selected[day.key];
+        btn.classList.toggle('checked');
+        updateSummary();
+      });
+      el.dayGrid.appendChild(btn);
+    });
+  }
+
+  function updateSummary() {
+    var count = Object.keys(state.selected).filter(function (k) { return state.selected[k]; }).length;
+    el.selectedDays.textContent = count;
+    var unitPrice = state.period ? state.period.unitPrice : 0;
+    el.unitPriceLabel.textContent = unitPrice.toLocaleString('ko-KR');
+    el.amountLabel.textContent = formatWon(count * unitPrice);
+  }
+
+  function loadMySubmission(empId) {
+    setStatus('불러오는 중...', '');
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (!res.ok) { setStatus(res.message, 'error'); return; }
+        state.selected = {};
+        (res.data.dateKeys || []).forEach(function (k) { state.selected[k] = true; });
+        el.noteInput.value = res.data.note || '';
+        renderDayGrid();
+        updateSummary();
+        setStatus('', '');
+      })
+      .withFailureHandler(function (err) { setStatus('불러오기 실패: ' + err.message, 'error'); })
+      .getMySubmission(empId);
+  }
+
+  el.employeeSelect.addEventListener('change', function () {
+    state.employeeId = el.employeeSelect.value;
+    if (!state.employeeId) {
+      el.daysSection.hidden = true;
+      return;
+    }
+    var emp = state.employees.filter(function (e2) { return e2.id === state.employeeId; })[0];
+    el.daysTitle.textContent = '② ' + (emp ? emp.displayName : '') + '님의 ' + state.period.month + '월 급식 예정일 확인';
+    el.daysSection.hidden = false;
+    loadMySubmission(state.employeeId);
+  });
+
+  el.checkAllBtn.addEventListener('click', function () {
+    state.days.forEach(function (d) { if (d.status !== '불가') state.selected[d.key] = true; });
+    renderDayGrid();
+    updateSummary();
+  });
+
+  el.uncheckAllBtn.addEventListener('click', function () {
+    state.selected = {};
+    renderDayGrid();
+    updateSummary();
+  });
+
+  el.saveBtn.addEventListener('click', function () {
+    if (!state.employeeId) { setStatus('직원을 먼저 선택해 주세요.', 'error'); return; }
+    el.saveBtn.disabled = true;
+    setStatus('저장 중...', '');
+    var dateKeys = Object.keys(state.selected).filter(function (k) { return state.selected[k]; });
+    var payload = {
+      employeeId: state.employeeId,
+      year: state.period.year,
+      month: state.period.month,
+      dateKeys: dateKeys,
+      note: el.noteInput.value
+    };
+    var timeout = setTimeout(function () {
+      el.saveBtn.disabled = false;
+      setStatus('저장 응답이 지연되고 있습니다. 다시 시도해 주세요.', 'error');
+    }, 30000);
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        clearTimeout(timeout);
+        el.saveBtn.disabled = false;
+        if (!res.ok) {
+          if (res.code === 'MONTH_CHANGED') {
+            setStatus('급식 대상 월이 변경되었습니다. 페이지를 새로고침해 주세요.', 'error');
+          } else {
+            setStatus(res.message, 'error');
+          }
+          return;
+        }
+        var emailMsg = '';
+        if (res.data.emailStatus === 'SENT') emailMsg = ' 안내 메일이 발송되었습니다.';
+        else if (res.data.emailStatus === 'NO_EMAIL') emailMsg = ' (이메일 미등록으로 메일은 발송되지 않았습니다)';
+        setStatus('저장되었습니다. ' + res.data.days + '일 / ' + res.data.amount.toLocaleString('ko-KR') + '원' + emailMsg, 'ok');
+        loadSummary();
+      })
+      .withFailureHandler(function (err) {
+        clearTimeout(timeout);
+        el.saveBtn.disabled = false;
+        setStatus('저장 실패: ' + err.message, 'error');
+      })
+      .saveSubmission(payload);
+  });
+
+  function loadSummary() {
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (!res.ok) return;
+        el.totalCount.textContent = res.data.summary.total;
+        el.submittedCount.textContent = res.data.summary.submitted;
+      })
+      .withFailureHandler(function () {})
+      .getInitialData();
+  }
+
+  function loadAdminIfToken() {
+    if (!window.ADMIN_TOKEN) return;
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (!res.ok) return;
+        el.adminSection.hidden = false;
+        el.adminTableBody.innerHTML = '';
+        res.data.rows.forEach(function (r) {
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + r.position + '</td>' +
+            '<td>' + r.name + '</td>' +
+            '<td>' + r.days + '</td>' +
+            '<td>' + formatWon(r.unitPrice) + '</td>' +
+            '<td>' + formatWon(r.amount) + '</td>' +
+            '<td>' + (r.submittedAt ? '제출완료' : '미제출') + '</td>' +
+            '<td>' + (r.note || '') + '</td>';
+          el.adminTableBody.appendChild(tr);
+        });
+      })
+      .withFailureHandler(function () {})
+      .getAdminDetail(window.ADMIN_TOKEN);
+  }
+
+  function init() {
+    setStatus('불러오는 중...', '');
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (!res.ok) { setStatus(res.message, 'error'); return; }
+        state.period = res.data.period;
+        state.employees = res.data.employees;
+        state.days = res.data.days;
+        el.pageTitle.textContent = state.period.title;
+        el.pageDesc.textContent = (res.data.schoolName ? res.data.schoolName + ' · ' : '') +
+          '급식단가 ' + state.period.unitPrice.toLocaleString('ko-KR') + '원 · ' +
+          '입금기한 ' + (res.data.paymentDeadline || '추후 안내');
+        el.daysHint.textContent = '급식이 불가능한 날짜(공휴일 등)는 회색으로 표시되며 선택할 수 없습니다. 예외일(*)은 담당자에게 확인 후 선택해 주세요.';
+        el.totalCount.textContent = res.data.summary.total;
+        el.submittedCount.textContent = res.data.summary.submitted;
+        el.footerNote.textContent = state.period.year + '년 ' + state.period.month + '월 급식비징수 기준(급식단가 ' + state.period.unitPrice.toLocaleString('ko-KR') + '원) · 온라인 제출 시스템';
+        renderEmployees();
+        setStatus('', '');
+        loadAdminIfToken();
+      })
+      .withFailureHandler(function (err) { setStatus('초기 데이터를 불러오지 못했습니다: ' + err.message, 'error'); })
+      .getInitialData();
+  }
+
+  init();
+})();
+</script>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('CSS'); ?>
+</head>
+<body>
+  <script>
+    window.ADMIN_TOKEN = "<?= adminToken ?>";
+  </script>
+
+  <div id="app" class="wrap">
+    <header class="header">
+      <h1 id="pageTitle">급식비 신청</h1>
+      <p id="pageDesc" class="desc"></p>
+    </header>
+
+    <section class="card">
+      <h2>① 본인 확인</h2>
+      <select id="employeeSelect">
+        <option value="">직급 · 성명 선택</option>
+      </select>
+    </section>
+
+    <section class="card" id="daysSection" hidden>
+      <h2 id="daysTitle">② 급식 가능일 확인</h2>
+      <p class="hint" id="daysHint"></p>
+      <div id="dayGrid" class="day-grid"></div>
+      <div class="btn-row">
+        <button type="button" id="checkAllBtn" class="btn ghost">전체 체크</button>
+        <button type="button" id="uncheckAllBtn" class="btn ghost">전체 해제</button>
+      </div>
+      <div class="summary-line">
+        선택일수: <strong id="selectedDays">0</strong>일 ×
+        <span id="unitPriceLabel">0</span>원 =
+        <strong id="amountLabel">0원</strong>
+      </div>
+      <label class="note-label">비고 (선택 입력, 예: 10/6 연가)</label>
+      <textarea id="noteInput" maxlength="200" placeholder="특이사항이 있으면 적어주세요"></textarea>
+      <button type="button" id="saveBtn" class="btn primary">저장하기</button>
+      <p id="statusMsg" class="status-msg"></p>
+    </section>
+
+    <section class="card" id="summarySection">
+      <h2>실시간 제출 현황</h2>
+      <p>전체 <strong id="totalCount">0</strong>명 중 <strong id="submittedCount">0</strong>명 제출</p>
+    </section>
+
+    <section class="card" id="adminSection" hidden>
+      <h2>관리자 상세 현황</h2>
+      <div class="table-wrap">
+        <table id="adminTable">
+          <thead>
+            <tr><th>직급</th><th>성명</th><th>급식일수</th><th>급식단가</th><th>급식비</th><th>제출상태</th><th>비고</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span id="footerNote"></span>
+    </footer>
+  </div>
+
+  <?!= include('JavaScript'); ?>
+</body>
+</html>
