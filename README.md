@@ -17,7 +17,7 @@ Google Sheets + Google Apps Script(HTMLService)로 만든 교직원 급식비 �
 
 ## 사용법 영상
 
-<video src="https://github.com/cic8822-cpu/eat_cost/raw/main/%EA%B8%89%EC%8B%9D%EB%B9%84_%EC%9E%90%EB%A7%89_v3_%EC%B5%9C%EC%A2%85.mp4" controls width="600"></video>
+<video src="https://github.com/user-attachments/assets/278ec6fe-5a55-41af-9471-90992c85c6f1" controls width="600"></video>
 
 영상이 보이지 않으면 [급식비_자막_v3_최종.mp4](급식비_자막_v3_최종.mp4)를 직접 열어 확인하세요.
 
