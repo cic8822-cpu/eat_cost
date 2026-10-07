@@ -12,6 +12,7 @@
     pageTitle: document.getElementById('pageTitle'),
     pageDesc: document.getElementById('pageDesc'),
     employeeSelect: document.getElementById('employeeSelect'),
+    employeeMessage: document.getElementById('employeeMessage'),
     daysSection: document.getElementById('daysSection'),
     daysTitle: document.getElementById('daysTitle'),
     daysHint: document.getElementById('daysHint'),
@@ -40,6 +41,11 @@
     el.statusMsg.className = 'status-msg' + (type ? ' ' + type : '');
   }
 
+  function setEmployeeMessage(msg, type) {
+    el.employeeMessage.textContent = msg || '';
+    el.employeeMessage.className = 'inline-message' + (type ? ' ' + type : '');
+  }
+
   function renderEmployees() {
     el.employeeSelect.innerHTML = '<option value="">직급 · 성명 선택</option>';
     state.employees.forEach(function (emp) {
@@ -48,6 +54,7 @@
       opt.textContent = emp.displayName;
       el.employeeSelect.appendChild(opt);
     });
+    setEmployeeMessage(state.employees.length ? '아래에서 본인 이름을 선택해 주세요.' : '등록된 이름이 없습니다. 담당자에게 문의해 주세요.', state.employees.length ? '' : 'error');
   }
 
   function renderDayGrid() {
@@ -58,16 +65,24 @@
       btn.className = 'day-btn';
       btn.textContent = day.label;
       btn.dataset.key = day.key;
+      btn.setAttribute('aria-pressed', state.selected[day.key] ? 'true' : 'false');
       if (day.status === '불가') {
         btn.classList.add('blocked');
         btn.disabled = true;
+        btn.title = '급식이 없는 날입니다.';
+        btn.setAttribute('aria-label', day.label + ', 급식 없음, 선택할 수 없음');
       }
-      if (day.status === '주의') btn.classList.add('caution');
+      if (day.status === '주의') {
+        btn.classList.add('caution');
+        btn.title = day.note ? day.note + ' 담당자에게 확인해 주세요.' : '담당자에게 확인한 뒤 선택해 주세요.';
+        btn.setAttribute('aria-label', day.label + ', 담당자 확인 필요');
+      }
       if (state.selected[day.key]) btn.classList.add('checked');
       btn.addEventListener('click', function () {
         if (btn.disabled) return;
         state.selected[day.key] = !state.selected[day.key];
         btn.classList.toggle('checked');
+        btn.setAttribute('aria-pressed', state.selected[day.key] ? 'true' : 'false');
         updateSummary();
       });
       el.dayGrid.appendChild(btn);
@@ -83,7 +98,7 @@
   }
 
   function loadMySubmission(empId) {
-    setStatus('불러오는 중...', '');
+    setStatus('저장된 신청 내용을 확인하고 있어요.', '');
     google.script.run
       .withSuccessHandler(function (res) {
         if (!res.ok) { setStatus(res.message, 'error'); return; }
@@ -98,9 +113,9 @@
         el.noteInput.value = res.data.note || '';
         renderDayGrid();
         updateSummary();
-        setStatus(droppedCount > 0 ? ('이전 제출 자료 중 급식 불가일 ' + droppedCount + '건은 자동으로 제외되었습니다.') : '', droppedCount > 0 ? 'error' : '');
+        setStatus(droppedCount > 0 ? ('급식이 없는 날 ' + droppedCount + '일은 선택에서 제외했어요. 날짜를 다시 확인해 주세요.') : '', droppedCount > 0 ? 'error' : '');
       })
-      .withFailureHandler(function (err) { setStatus('불러오기 실패: ' + err.message, 'error'); })
+      .withFailureHandler(function () { setStatus('저장한 신청 내용을 불러오지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.', 'error'); })
       .getMySubmission(empId);
   }
 
@@ -111,7 +126,7 @@
       return;
     }
     var emp = state.employees.filter(function (e2) { return e2.id === state.employeeId; })[0];
-    el.daysTitle.textContent = '② ' + (emp ? emp.displayName : '') + '님의 ' + state.period.month + '월 급식 예정일 확인';
+    el.daysTitle.textContent = (emp ? emp.displayName : '본인') + '님, 급식 드실 날짜를 선택해 주세요';
     el.daysSection.hidden = false;
     loadMySubmission(state.employeeId);
   });
@@ -159,16 +174,17 @@
           return;
         }
         var emailMsg = '';
-        if (res.data.emailStatus === 'SENT') emailMsg = ' 안내 메일이 발송되었습니다.';
-        else if (res.data.emailStatus === 'NO_EMAIL') emailMsg = ' (이메일 미등록으로 메일은 발송되지 않았습니다)';
-        setStatus('제출되었습니다. ' + res.data.days + '일 / ' + res.data.amount.toLocaleString('ko-KR') + '원' + emailMsg, 'ok');
+        if (res.data.emailStatus === 'SENT') emailMsg = ' 안내 메일도 보냈어요.';
+        else if (res.data.emailStatus === 'NO_EMAIL') emailMsg = ' 이메일이 등록되지 않아 안내 메일은 보내지 못했어요.';
+        else if (res.data.emailStatus === 'FAILED' || res.data.emailStatus === 'QUOTA') emailMsg = ' 신청은 저장됐지만 안내 메일은 보내지 못했어요. 담당자에게 문의해 주세요.';
+        setStatus((res.data.isUpdate ? '신청 내용을 수정했어요. ' : '신청을 저장했어요. ') + res.data.days + '일 · ' + formatWon(res.data.amount) + '.' + emailMsg, 'ok');
         loadSummary();
         loadAdminIfToken();
       })
-      .withFailureHandler(function (err) {
+      .withFailureHandler(function () {
         clearTimeout(timeout);
         el.saveBtn.disabled = false;
-        setStatus('제출 실패: ' + err.message, 'error');
+        setStatus('신청을 저장하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.', 'error');
       })
       .saveSubmission(payload);
   });
@@ -209,26 +225,23 @@
   }
 
   function init() {
-    setStatus('불러오는 중...', '');
+    setEmployeeMessage('급식 정보를 불러오는 중입니다.', '');
     google.script.run
       .withSuccessHandler(function (res) {
-        if (!res.ok) { setStatus(res.message, 'error'); return; }
+        if (!res.ok) { setEmployeeMessage('급식 정보를 불러오지 못했습니다. 담당자에게 문의해 주세요.', 'error'); return; }
         state.period = res.data.period;
         state.employees = res.data.employees;
         state.days = res.data.days;
-        el.pageTitle.textContent = state.period.title;
-        el.pageDesc.textContent = (res.data.schoolName ? res.data.schoolName + ' · ' : '') +
-          '급식단가 ' + state.period.unitPrice.toLocaleString('ko-KR') + '원 · ' +
-          '입금기한 ' + (res.data.paymentDeadline || '추후 안내');
-        el.daysHint.textContent = '급식이 불가능한 날짜(공휴일 등)는 회색으로 표시되며 선택할 수 없습니다. 예외일(*)은 담당자에게 확인 후 선택해 주세요.';
+        el.pageTitle.textContent = state.period.year + '년 ' + state.period.month + '월 급식 신청';
+        el.pageDesc.textContent = [res.data.schoolName, '하루 ' + formatWon(state.period.unitPrice), '납부 기한 ' + (res.data.paymentDeadline || '담당자 안내')].filter(Boolean).join(' · ');
+        el.daysHint.textContent = '급식이 없는 날은 선택할 수 없어요. 별표(*) 날짜는 담당자에게 확인한 뒤 선택해 주세요.';
         el.totalCount.textContent = res.data.summary.total;
         el.submittedCount.textContent = res.data.summary.submitted;
-        el.footerNote.textContent = state.period.year + '년 ' + state.period.month + '월 급식비징수 기준(급식단가 ' + state.period.unitPrice.toLocaleString('ko-KR') + '원) · 온라인 제출 시스템';
+        el.footerNote.textContent = state.period.year + '년 ' + state.period.month + '월 온라인 급식 신청 · 하루 ' + formatWon(state.period.unitPrice);
         renderEmployees();
-        setStatus('', '');
         loadAdminIfToken();
       })
-      .withFailureHandler(function (err) { setStatus('초기 데이터를 불러오지 못했습니다: ' + err.message, 'error'); })
+      .withFailureHandler(function () { setEmployeeMessage('급식 정보를 불러오지 못했습니다. 새로고침하거나 담당자에게 문의해 주세요.', 'error'); })
       .getInitialData();
   }
 

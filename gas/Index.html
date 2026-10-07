@@ -11,39 +11,48 @@
 
   <div id="app" class="wrap">
     <header class="header">
-      <h1 id="pageTitle">급식비 신청</h1>
-      <p id="pageDesc" class="desc"></p>
+      <p class="eyebrow">교직원 급식 신청</p>
+      <h1 id="pageTitle">이번 달 급식 신청</h1>
+      <p id="pageDesc" class="desc">로그인 없이 이름과 날짜를 선택하면 신청할 수 있어요.</p>
+      <p class="flow-copy">이름 선택 <span aria-hidden="true">→</span> 날짜 선택 <span aria-hidden="true">→</span> 금액 확인 후 제출</p>
     </header>
 
-    <section class="card">
-      <h2>① 본인 확인</h2>
-      <select id="employeeSelect">
+    <section class="card" aria-labelledby="employeeTitle">
+      <h2 id="employeeTitle"><span class="step-number">1</span> 이름을 선택해 주세요</h2>
+      <label class="field-label" for="employeeSelect">직급과 이름</label>
+      <select id="employeeSelect" aria-describedby="employeeMessage">
         <option value="">직급 · 성명 선택</option>
       </select>
+      <p id="employeeMessage" class="inline-message" role="status" aria-live="polite">급식 정보를 불러오는 중입니다.</p>
     </section>
 
-    <section class="card" id="daysSection" hidden>
-      <h2 id="daysTitle">② 급식 가능일 확인</h2>
+    <section class="card" id="daysSection" aria-labelledby="daysTitle" hidden>
+      <h2><span class="step-number">2</span><span id="daysTitle">급식 드실 날짜를 선택해 주세요</span></h2>
       <p class="hint" id="daysHint"></p>
+      <ul class="day-legend" aria-label="날짜 표시 안내">
+        <li><span class="legend-key selected" aria-hidden="true">✓</span> 신청한 날</li>
+        <li><span class="legend-key unavailable" aria-hidden="true">—</span> 급식 없음</li>
+        <li><span class="legend-key caution" aria-hidden="true">*</span> 담당자 확인</li>
+      </ul>
       <div id="dayGrid" class="day-grid"></div>
       <div class="btn-row">
-        <button type="button" id="checkAllBtn" class="btn ghost">전체 체크</button>
-        <button type="button" id="uncheckAllBtn" class="btn ghost">전체 해제</button>
+        <button type="button" id="checkAllBtn" class="btn secondary">급식 가능한 날 모두 선택</button>
+        <button type="button" id="uncheckAllBtn" class="btn ghost">모두 지우기</button>
       </div>
-      <div class="summary-line">
-        선택일수: <strong id="selectedDays">0</strong>일 ×
-        <span id="unitPriceLabel">0</span>원 =
-        <strong id="amountLabel">0원</strong>
+      <div class="price-summary" aria-live="polite" aria-atomic="true">
+        <div class="price-heading"><span class="step-number">3</span><h3>신청 내용을 확인해 주세요</h3></div>
+        <p class="price-total"><span>예상 급식비</span><strong id="amountLabel">0원</strong></p>
+        <p class="price-detail"><span><strong id="selectedDays">0</strong>일 신청</span><span aria-hidden="true">·</span><span>하루 <strong id="unitPriceLabel">0</strong>원</span></p>
       </div>
-      <label class="note-label">비고 (선택 입력, 예: 10/6 연가)</label>
-      <textarea id="noteInput" maxlength="200" placeholder="특이사항이 있으면 적어주세요"></textarea>
-      <button type="button" id="saveBtn" class="btn primary">제출하기</button>
-      <p id="statusMsg" class="status-msg"></p>
+      <label class="note-label" for="noteInput">담당자에게 남길 말 <span>(선택)</span></label>
+      <textarea id="noteInput" maxlength="200" placeholder="예: 10월 6일은 연가입니다"></textarea>
+      <button type="button" id="saveBtn" class="btn primary">급식 신청 제출</button>
+      <p id="statusMsg" class="status-msg" role="status" aria-live="polite" aria-atomic="true"></p>
     </section>
 
     <section class="card" id="summarySection">
-      <h2>실시간 제출 현황</h2>
-      <p>전체 <strong id="totalCount">0</strong>명 중 <strong id="submittedCount">0</strong>명 제출</p>
+      <h2>우리 학교 신청 현황</h2>
+      <p>전체 <strong id="totalCount">0</strong>명 중 <strong id="submittedCount">0</strong>명이 신청했어요.</p>
     </section>
 
     <section class="card" id="adminSection" hidden>

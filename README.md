@@ -17,9 +17,21 @@ Google Sheets + Google Apps Script(HTMLService)로 만든 교직원 급식비 �
 
 ## 사용법 영상
 
-<video src="https://github.com/user-attachments/assets/278ec6fe-5a55-41af-9471-90992c85c6f1" controls width="600"></video>
+<video controls playsinline preload="metadata" width="600">
+  <source src="https://github.com/user-attachments/assets/278ec6fe-5a55-41af-9471-90992c85c6f1" type="video/mp4">
+  브라우저에서 영상 재생을 지원하지 않으면 아래 링크를 눌러 영상을 여세요.
+</video>
 
-영상이 보이지 않으면 [급식비_자막_v3_최종.mp4](급식비_자막_v3_최종.mp4)를 직접 열어 확인하세요.
+영상이 보이지 않으면 [급식비_자막_v3_최종.mp4](https://github.com/cic8822-cpu/eat_cost/raw/refs/heads/main/%EA%B8%89%EC%8B%9D%EB%B9%84_%EC%9E%90%EB%A7%89_v3_%EC%B5%9C%EC%A2%85.mp4)를 직접 여세요.
+
+## 직원용 빠른 사용법
+
+1. 담당자가 보낸 급식 신청 링크를 엽니다. 로그인이나 설치는 필요하지 않습니다.
+2. 본인의 **직급 · 이름**을 선택합니다.
+3. 급식 먹을 날짜를 누릅니다. 초록색 체크는 선택한 날, 회색은 급식이 없는 날, 별표(*)는 담당자 확인이 필요한 날입니다.
+4. 예상 급식비를 확인하고 **급식 신청 제출**을 누릅니다. 메모는 필요한 경우에만 적으면 됩니다.
+
+제출 완료 안내가 나오면 저장된 것입니다. 날짜를 고치려면 이름을 다시 선택하고 수정한 뒤 다시 제출하세요.
 
 ## 폴더 구조
 
