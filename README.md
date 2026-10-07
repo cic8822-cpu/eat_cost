@@ -16,7 +16,7 @@
 
 ## 학교 담당자용 사용법 영상
 
-아래 재생 버튼을 누르세요. 재생이 안 되면 **[영상 파일 직접 열기](https://github.com/cic8822-cpu/eat_cost/raw/refs/heads/main/%EA%B8%89%EC%8B%9D%EB%B9%84_%EC%9E%90%EB%A7%89_v3_%EC%B5%9C%EC%A2%85.mp4)**를 누르면 됩니다.
+아래 재생 버튼을 누르세요. 재생이 안 되면 [영상 파일 직접 열기](https://github.com/cic8822-cpu/eat_cost/raw/refs/heads/main/%EA%B8%89%EC%8B%9D%EB%B9%84_%EC%9E%90%EB%A7%89_v3_%EC%B5%9C%EC%A2%85.mp4)를 누르면 됩니다.
 
 <video src="https://github.com/user-attachments/assets/278ec6fe-5a55-41af-9471-90992c85c6f1" controls playsinline preload="metadata" width="100%"></video>
 
@@ -35,7 +35,7 @@
 
 급식 신청 링크를 직접 만들거나 다른 학교에서 사용하려면 아래 **처음 설정 안내**를 펼쳐 보세요. 직원은 이 설정을 할 필요가 없습니다.
 
-[처음 설정 상세 안내](3.%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C-source.md#다른-학교에서-시작하기최초-1회-설정) · [전체 사용설명서](3.%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C-source.md)
+[처음 설정 상세 안내](3.%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C-source.md) · [전체 사용설명서](3.%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C-source.md)
 
 <details>
 <summary>담당자 설정·개발자 참고자료 펼쳐 보기</summary>
